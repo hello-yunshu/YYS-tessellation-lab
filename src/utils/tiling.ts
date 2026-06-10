@@ -44,7 +44,12 @@ function getBaseShape(type: ShapeType, size: number): Point[] {
     case "equilateral-triangle":
       return regularPolygonPoints(3, size);
     case "square":
-      return regularPolygonPoints(4, size);
+      return [
+        { x: -size, y: -size },
+        { x: size, y: -size },
+        { x: size, y: size },
+        { x: -size, y: size },
+      ];
     case "rectangle": {
       const w = size * 1.6;
       const h = size;
