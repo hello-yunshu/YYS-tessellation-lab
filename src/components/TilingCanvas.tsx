@@ -22,7 +22,7 @@ export default function TilingCanvas() {
   }, []);
 
   const config = getShapeConfig(selectedShape);
-  const tileSize = isWide ? 22 : 28;
+  const tileSize = isWide ? 13 : 28;
   const tiles = useMemo(
     () => config.generateTiles(6, 4, tileSize),
     [selectedShape, tileSize]
@@ -50,12 +50,14 @@ export default function TilingCanvas() {
           {/* 多边形层 */}
           {tiles.map((tile, i) => (
             <polygon
-              key={i}
+              key={`${selectedShape}-${i}`}
               points={pointsToSvg(tile.points)}
               fill={tile.fill}
               stroke={showBorders ? "#666" : "none"}
               strokeWidth={showBorders ? 1.5 : 0}
               strokeLinejoin="round"
+              className="tile-drop"
+              style={{ animationDelay: `${i * 18}ms` }}
             />
           ))}
           {/* 顶点层 — 置于最上方 */}

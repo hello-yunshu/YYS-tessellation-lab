@@ -11,7 +11,12 @@ function MiniShape({ type }: { type: ShapeType }) {
       points = regularPolygonPoints(3, 10);
       break;
     case "square":
-      points = regularPolygonPoints(4, 10);
+      points = [
+        { x: -10, y: -10 },
+        { x: 10, y: -10 },
+        { x: 10, y: 10 },
+        { x: -10, y: 10 },
+      ];
       break;
     case "rectangle":
       points = [
