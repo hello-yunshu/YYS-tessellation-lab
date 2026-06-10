@@ -12,17 +12,30 @@ export default function TilingCanvas() {
     teacherMode,
   } = useApp();
 
-  // 宽屏用小尺寸(80%)，窄屏保持原尺寸
-  const [isWide, setIsWide] = useState(() => window.innerWidth > 600);
+  const [screenSize, setScreenSize] = useState<"compact" | "regular" | "wide">(() => {
+    if (window.innerWidth >= 1100) return "wide";
+    if (window.innerWidth >= 700) return "regular";
+    return "compact";
+  });
+
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 601px)");
-    const handler = (e: MediaQueryListEvent) => setIsWide(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
+    const updateScreenSize = () => {
+      if (window.innerWidth >= 1100) {
+        setScreenSize("wide");
+      } else if (window.innerWidth >= 700) {
+        setScreenSize("regular");
+      } else {
+        setScreenSize("compact");
+      }
+    };
+
+    updateScreenSize();
+    window.addEventListener("resize", updateScreenSize);
+    return () => window.removeEventListener("resize", updateScreenSize);
   }, []);
 
   const config = getShapeConfig(selectedShape);
-  const tileSize = isWide ? 13 : 28;
+  const tileSize = screenSize === "wide" ? 34 : screenSize === "regular" ? 30 : 26;
   const tiles = useMemo(
     () => config.generateTiles(6, 4, tileSize),
     [selectedShape, tileSize]
@@ -39,9 +52,9 @@ export default function TilingCanvas() {
         if (p.y > maxY) maxY = p.y;
       }
     }
-    const pad = 20;
+    const pad = Math.max(14, tileSize * 0.45);
     return `${minX - pad} ${minY - pad} ${maxX - minX + pad * 2} ${maxY - minY + pad * 2}`;
-  }, [tiles]);
+  }, [tiles, tileSize]);
 
   // 生成随机动画延迟（基于 selectedShape 确定性伪随机）
   const delays = useMemo(() => {
