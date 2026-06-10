@@ -43,6 +43,20 @@ export default function TilingCanvas() {
     return `${minX - pad} ${minY - pad} ${maxX - minX + pad * 2} ${maxY - minY + pad * 2}`;
   }, [tiles]);
 
+  // 生成随机动画延迟（基于 selectedShape 确定性伪随机）
+  const delays = useMemo(() => {
+    // 简单伪随机：用 selectedShape 的 charCode 做种子
+    let seed = 0;
+    for (let k = 0; k < selectedShape.length; k++) seed += selectedShape.charCodeAt(k);
+    const rand = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    // 分3~5波落下，每波内随机偏移
+    const waves = 3 + Math.floor(rand() * 3);
+    return tiles.map(() => {
+      const wave = Math.floor(rand() * waves);
+      return wave * 40 + rand() * 30; // 每波间隔40ms，波内随机0~30ms
+    });
+  }, [selectedShape, tiles.length]);
+
   return (
     <div>
       <div className="tiling-canvas">
@@ -57,7 +71,7 @@ export default function TilingCanvas() {
               strokeWidth={showBorders ? 1.5 : 0}
               strokeLinejoin="round"
               className="tile-drop"
-              style={{ animationDelay: `${i * 18}ms` }}
+              style={{ animationDelay: `${delays[i]}ms` }}
             />
           ))}
           {/* 顶点层 — 置于最上方 */}
