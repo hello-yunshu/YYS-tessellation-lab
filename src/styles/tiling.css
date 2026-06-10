@@ -34,7 +34,11 @@
 @keyframes tileDrop {
   0% {
     opacity: 0;
-    transform: translateY(-8px);
+    transform: translateY(-10px);
+  }
+  40% {
+    opacity: 0.4;
+    transform: translateY(0);
   }
   100% {
     opacity: 1;
@@ -43,7 +47,7 @@
 }
 
 .tiling-canvas .tile-drop {
-  animation: tileDrop 0.2s ease-out both;
+  animation: tileDrop 0.3s ease-out both;
 }
 
 /* 图形选择器 */
