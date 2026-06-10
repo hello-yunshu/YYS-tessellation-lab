@@ -230,8 +230,13 @@ export default function DragPlayground() {
     moveDrag(touch.clientX, touch.clientY);
   };
 
-  const handleTouchEnd = () => {
-    endDrag();
+  // canvas 上的 touchend：拖拽结束 + 触屏点击空白取消选中
+  const handleCanvasTouchEnd = () => {
+    if (dragging) {
+      endDrag();
+    } else if (!wasDraggingRef.current) {
+      setSelectedId(null);
+    }
   };
 
   const handleCanvasClick = () => {
@@ -347,8 +352,8 @@ export default function DragPlayground() {
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
           onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchEnd}
+          onTouchEnd={handleCanvasTouchEnd}
+          onTouchCancel={handleCanvasTouchEnd}
           onClick={handleCanvasClick}
         >
           <svg viewBox={`0 0 ${VB_WIDTH} ${VB_HEIGHT}`} xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">

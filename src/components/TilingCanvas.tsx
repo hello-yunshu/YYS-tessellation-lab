@@ -14,7 +14,7 @@ export default function TilingCanvas() {
 
   const config = getShapeConfig(selectedShape);
   const tiles = useMemo(
-    () => config.generateTiles(6, 4, 28),
+    () => config.generateTiles(6, 4, 22),
     [selectedShape]
   );
 

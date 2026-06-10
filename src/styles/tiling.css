@@ -424,6 +424,7 @@
     min-height: 28px;
   }
   .drag-toolbox .tool-ops .btn-danger.btn-sm {
-    min-height: 28px;
+    min-height: 32px;
+    padding: 6px 16px;
   }
 }
