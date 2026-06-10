@@ -5,6 +5,6 @@ export default defineConfig({
   plugins: [react()],
   base:
     process.env.NODE_ENV === "production"
-      ? "/sujiao-math-tiling-demo/"
+      ? "/YYS-tessellation-lab/"
       : "/",
 });
