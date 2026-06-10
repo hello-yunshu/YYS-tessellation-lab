@@ -101,3 +101,37 @@ export function pointsToSvg(points: Point[]): string {
 export function pointsToSvgFixed(points: Point[], decimals = 1): string {
   return points.map((p) => `${p.x.toFixed(decimals)},${p.y.toFixed(decimals)}`).join(" ");
 }
+
+/** 使用分离轴定理（SAT）检测两个凸多边形是否重叠 */
+export function polygonsOverlap(a: Point[], b: Point[]): boolean {
+  const axes = getAxes(a).concat(getAxes(b));
+  for (const axis of axes) {
+    const projA = projectPolygon(a, axis);
+    const projB = projectPolygon(b, axis);
+    if (projA.max <= projB.min || projB.max <= projA.min) {
+      return false; // 存在分离轴，不重叠
+    }
+  }
+  return true; // 所有轴上都重叠
+}
+
+function getAxes(pts: Point[]): Point[] {
+  const axes: Point[] = [];
+  for (let i = 0; i < pts.length; i++) {
+    const next = pts[(i + 1) % pts.length];
+    const edge = { x: next.x - pts[i].x, y: next.y - pts[i].y };
+    // 法线（垂直于边）
+    axes.push({ x: -edge.y, y: edge.x });
+  }
+  return axes;
+}
+
+function projectPolygon(pts: Point[], axis: Point): { min: number; max: number } {
+  let min = Infinity, max = -Infinity;
+  for (const p of pts) {
+    const proj = p.x * axis.x + p.y * axis.y;
+    if (proj < min) min = proj;
+    if (proj > max) max = proj;
+  }
+  return { min, max };
+}

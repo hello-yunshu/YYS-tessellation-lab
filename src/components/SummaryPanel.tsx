@@ -13,6 +13,7 @@ export default function SummaryPanel() {
           justifyContent: "space-between",
           alignItems: "center",
           cursor: "pointer",
+          paddingRight: "36px",
         }}
         onClick={() => setOpen(!open)}
       >

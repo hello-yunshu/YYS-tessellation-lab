@@ -1,10 +1,10 @@
-import React, { useState, useRef, useCallback, type MouseEvent } from "react";
+import React, { useState, useRef, type MouseEvent } from "react";
 import { shapeConfigs, type ShapeType } from "../utils/tiling";
 import {
   regularPolygonPoints,
   rotatePoint,
   pointsToSvg,
-  polygonBounds,
+  polygonsOverlap,
   type Point,
 } from "../utils/geometry";
 import AIExplainButton from "./AIExplainButton";
@@ -99,7 +99,7 @@ export default function DragPlayground() {
   const [dragging, setDragging] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [snapToGrid, setSnapToGrid] = useState(false);
+  const [snapToGrid, setSnapToGrid] = useState(true);
   const [warning, setWarning] = useState<string | null>(null);
   const [wasDragging, setWasDragging] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -178,14 +178,14 @@ export default function DragPlayground() {
 
   const handleMouseUp = () => {
     if (dragging) {
-      // Check overlap
+      // Check overlap using SAT (precise polygon overlap)
       const movedShape = shapes.find((s) => s.id === dragging);
       if (movedShape) {
-        const movedBounds = polygonBounds(getTransformedPoints(movedShape));
+        const movedPts = getTransformedPoints(movedShape);
         for (const other of shapes) {
           if (other.id === dragging) continue;
-          const otherBounds = polygonBounds(getTransformedPoints(other));
-          if (rectsOverlapSimple(movedBounds, otherBounds)) {
+          const otherPts = getTransformedPoints(other);
+          if (polygonsOverlap(movedPts, otherPts)) {
             setWarning("可能有重叠，请检查！");
             break;
           }
@@ -388,17 +388,5 @@ export default function DragPlayground() {
         </div>
       </div>
     </section>
-  );
-}
-
-function rectsOverlapSimple(
-  a: { x: number; y: number; w: number; h: number },
-  b: { x: number; y: number; w: number; h: number }
-): boolean {
-  return !(
-    a.x + a.w <= b.x ||
-    b.x + b.w <= a.x ||
-    a.y + a.h <= b.y ||
-    b.y + b.h <= a.y
   );
 }
