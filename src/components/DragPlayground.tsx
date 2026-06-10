@@ -1,4 +1,4 @@
-import React, { useState, useRef, type MouseEvent } from "react";
+import { useState, useRef, useCallback } from "react";
 import { shapeConfigs, type ShapeType } from "../utils/tiling";
 import {
   regularPolygonPoints,
@@ -94,6 +94,10 @@ function getBasePoints(type: ShapeType): Point[] {
 
 const ROTATION_STEPS = [15, 30, 45, 60, 90];
 
+// SVG viewBox 尺寸
+const VB_WIDTH = 600;
+const VB_HEIGHT = 400;
+
 export default function DragPlayground() {
   const [shapes, setShapes] = useState<DraggedShape[]>([]);
   const [dragging, setDragging] = useState<string | null>(null);
@@ -101,7 +105,7 @@ export default function DragPlayground() {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [snapToGrid, setSnapToGrid] = useState(true);
   const [warning, setWarning] = useState<string | null>(null);
-  const [wasDragging, setWasDragging] = useState(false);
+  const wasDraggingRef = useRef(false);
   const canvasRef = useRef<HTMLDivElement>(null);
   const idCounter = useRef(0);
 
@@ -130,55 +134,54 @@ export default function DragPlayground() {
 
   const SNAP_GRID = 10;
 
-  // 将鼠标客户端坐标转换为 SVG viewBox 坐标
-  const clientToViewBox = (clientX: number, clientY: number) => {
+  // 将客户端坐标转换为 SVG viewBox 坐标
+  const clientToViewBox = useCallback((clientX: number, clientY: number) => {
     const svgEl = canvasRef.current?.querySelector("svg");
     if (!svgEl) return { x: clientX, y: clientY };
     const svgRect = svgEl.getBoundingClientRect();
     return {
-      x: ((clientX - svgRect.left) / svgRect.width) * 600,
-      y: ((clientY - svgRect.top) / svgRect.height) * 400,
+      x: ((clientX - svgRect.left) / svgRect.width) * VB_WIDTH,
+      y: ((clientY - svgRect.top) / svgRect.height) * VB_HEIGHT,
     };
-  };
+  }, []);
 
-  const handleMouseDown = (e: MouseEvent, shapeId: string) => {
-    e.stopPropagation();
-    const shape = shapes.find((s) => s.id === shapeId);
-    if (!shape) return;
-    const vbPos = clientToViewBox(e.clientX, e.clientY);
-    setDragging(shapeId);
-    setSelectedId(shapeId);
-    setDragOffset({
-      x: vbPos.x - shape.x,
-      y: vbPos.y - shape.y,
-    });
-  };
+  // 统一的拖拽开始处理（mouse + touch 共用）
+  const startDrag = useCallback(
+    (clientX: number, clientY: number, shapeId: string) => {
+      const shape = shapes.find((s) => s.id === shapeId);
+      if (!shape) return;
+      const vbPos = clientToViewBox(clientX, clientY);
+      setDragging(shapeId);
+      setSelectedId(shapeId);
+      setDragOffset({
+        x: vbPos.x - shape.x,
+        y: vbPos.y - shape.y,
+      });
+    },
+    [shapes, clientToViewBox]
+  );
 
-  const handleCanvasClick = () => {
-    if (wasDragging) {
-      setWasDragging(false);
-      return;
-    }
-    setSelectedId(null);
-  };
+  // 统一的拖拽移动处理
+  const moveDrag = useCallback(
+    (clientX: number, clientY: number) => {
+      if (!dragging) return;
+      const vbPos = clientToViewBox(clientX, clientY);
+      let x = vbPos.x - dragOffset.x;
+      let y = vbPos.y - dragOffset.y;
+      if (snapToGrid) {
+        x = Math.round(x / SNAP_GRID) * SNAP_GRID;
+        y = Math.round(y / SNAP_GRID) * SNAP_GRID;
+      }
+      setShapes((prev) =>
+        prev.map((s) => (s.id === dragging ? { ...s, x, y } : s))
+      );
+    },
+    [dragging, dragOffset, snapToGrid, clientToViewBox]
+  );
 
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!dragging) return;
-    const vbPos = clientToViewBox(e.clientX, e.clientY);
-    let x = vbPos.x - dragOffset.x;
-    let y = vbPos.y - dragOffset.y;
-    if (snapToGrid) {
-      x = Math.round(x / SNAP_GRID) * SNAP_GRID;
-      y = Math.round(y / SNAP_GRID) * SNAP_GRID;
-    }
-    setShapes((prev) =>
-      prev.map((s) => (s.id === dragging ? { ...s, x, y } : s))
-    );
-  };
-
-  const handleMouseUp = () => {
+  // 统一的拖拽结束处理
+  const endDrag = useCallback(() => {
     if (dragging) {
-      // Check overlap using SAT (precise polygon overlap)
       const movedShape = shapes.find((s) => s.id === dragging);
       if (movedShape) {
         const movedPts = getTransformedPoints(movedShape);
@@ -193,7 +196,50 @@ export default function DragPlayground() {
       }
     }
     setDragging(null);
-    setWasDragging(true);
+    wasDraggingRef.current = true;
+    requestAnimationFrame(() => { wasDraggingRef.current = false; });
+  }, [dragging, shapes]);
+
+  // --- Mouse 事件 ---
+  const handleMouseDown = (e: React.MouseEvent, shapeId: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    startDrag(e.clientX, e.clientY, shapeId);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    moveDrag(e.clientX, e.clientY);
+  };
+
+  const handleMouseUp = () => {
+    endDrag();
+  };
+
+  // --- Touch 事件 ---
+  const handleTouchStart = (e: React.TouchEvent, shapeId: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const touch = e.touches[0];
+    startDrag(touch.clientX, touch.clientY, shapeId);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!dragging) return;
+    e.preventDefault(); // 阻止页面滚动
+    const touch = e.touches[0];
+    moveDrag(touch.clientX, touch.clientY);
+  };
+
+  const handleTouchEnd = () => {
+    endDrag();
+  };
+
+  const handleCanvasClick = () => {
+    if (wasDraggingRef.current) {
+      wasDraggingRef.current = false;
+      return;
+    }
+    setSelectedId(null);
   };
 
   const rotateShape = (shapeId: string, angle: number) => {
@@ -300,10 +346,12 @@ export default function DragPlayground() {
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
           onClick={handleCanvasClick}
-          style={{ minHeight: "400px" }}
         >
-          <svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+          <svg viewBox={`0 0 ${VB_WIDTH} ${VB_HEIGHT}`} xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
             {/* Grid - matches SNAP_GRID=10, major lines every 50 */}
             {snapToGrid &&
               Array.from({ length: 61 }).map((_, i) => (
@@ -312,7 +360,7 @@ export default function DragPlayground() {
                   x1={i * 10}
                   y1={0}
                   x2={i * 10}
-                  y2={400}
+                  y2={VB_HEIGHT}
                   stroke={i % 5 === 0 ? "#d0d0d0" : "#e8e8e8"}
                   strokeWidth={i % 5 === 0 ? "0.8" : "0.4"}
                 />
@@ -323,7 +371,7 @@ export default function DragPlayground() {
                   key={`gh-${i}`}
                   x1={0}
                   y1={i * 10}
-                  x2={600}
+                  x2={VB_WIDTH}
                   y2={i * 10}
                   stroke={i % 5 === 0 ? "#d0d0d0" : "#e8e8e8"}
                   strokeWidth={i % 5 === 0 ? "0.8" : "0.4"}
@@ -342,8 +390,9 @@ export default function DragPlayground() {
                     opacity={0.85}
                     cursor="move"
                     onMouseDown={(e) => handleMouseDown(e, shape.id)}
+                    onTouchStart={(e) => handleTouchStart(e, shape.id)}
                     onClick={(e) => e.stopPropagation()}
-                    style={{ pointerEvents: "all" }}
+                    style={{ pointerEvents: "all", touchAction: "none" }}
                   />
                 </g>
               );
