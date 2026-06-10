@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useApp } from "../AppContext";
 import { getShapeConfig } from "../utils/tiling";
 import { pointsToSvg } from "../utils/geometry";
@@ -12,10 +12,20 @@ export default function TilingCanvas() {
     teacherMode,
   } = useApp();
 
+  // 宽屏用小尺寸(80%)，窄屏保持原尺寸
+  const [isWide, setIsWide] = useState(() => window.innerWidth > 900);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 901px)");
+    const handler = (e: MediaQueryListEvent) => setIsWide(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
   const config = getShapeConfig(selectedShape);
+  const tileSize = isWide ? 22 : 28;
   const tiles = useMemo(
-    () => config.generateTiles(6, 4, 22),
-    [selectedShape]
+    () => config.generateTiles(6, 4, tileSize),
+    [selectedShape, tileSize]
   );
 
   // Calculate SVG viewBox from tiles
