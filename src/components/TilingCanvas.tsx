@@ -13,9 +13,9 @@ export default function TilingCanvas() {
   } = useApp();
 
   // 宽屏用小尺寸(80%)，窄屏保持原尺寸
-  const [isWide, setIsWide] = useState(() => window.innerWidth > 900);
+  const [isWide, setIsWide] = useState(() => window.innerWidth > 600);
   useEffect(() => {
-    const mq = window.matchMedia("(min-width: 901px)");
+    const mq = window.matchMedia("(min-width: 601px)");
     const handler = (e: MediaQueryListEvent) => setIsWide(e.matches);
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
