@@ -26,7 +26,7 @@ export function useApp() {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [teacherMode, setTeacherMode] = useState(false);
-  const [aiExplainMode, setAIExplainMode] = useState(false);
+  const [aiExplainMode, setAIExplainMode] = useState(true);
   const [selectedShape, setSelectedShape] = useState<ShapeType>("square");
   const [showBorders, setShowBorders] = useState(true);
   const [showVertices, setShowVertices] = useState(false);

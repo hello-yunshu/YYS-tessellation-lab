@@ -30,59 +30,41 @@ const toolShapes: ShapeType[] = [
   "octagon",
 ];
 
-// 所有图形尺寸设计为 10 的倍数，配合 SNAP_GRID=10 实现密铺
-// 正三角形/正六边形因 √3 无法同时为正多边形且 10 整除，故做微调
+// 图形基础顶点坐标（正六边形、正三角形使用密铺网格吸附，其他图形对齐 SNAP_GRID=10 网格）
 function getBasePoints(type: ShapeType): Point[] {
   switch (type) {
     case "equilateral-triangle":
-      // 底40 高30，两个拼成 40×30 矩形
-      return [
-        { x: 0, y: -15 },
-        { x: 20, y: 15 },
-        { x: -20, y: 15 },
-      ];
+      return regularPolygonPoints(3, 20);
     case "square":
-      // 边长30
       return [
-        { x: -15, y: -15 },
-        { x: 15, y: -15 },
-        { x: 15, y: 15 },
-        { x: -15, y: 15 },
+        { x: -10, y: -10 },
+        { x: 10, y: -10 },
+        { x: 10, y: 10 },
+        { x: -10, y: 10 },
       ];
     case "rectangle":
-      // 50×30
       return [
-        { x: -25, y: -15 },
-        { x: 25, y: -15 },
-        { x: 25, y: 15 },
-        { x: -25, y: 15 },
-      ];
-    case "parallelogram":
-      // 底40 高30 偏移10
-      return [
-        { x: -20, y: -15 },
-        { x: 20, y: -15 },
-        { x: 30, y: 15 },
-        { x: -10, y: 15 },
-      ];
-    case "trapezoid":
-      // 上20 下40 高30
-      return [
-        { x: -10, y: -15 },
-        { x: 10, y: -15 },
-        { x: 20, y: 15 },
-        { x: -20, y: 15 },
-      ];
-    case "hexagon":
-      // 宽40 高40，尖顶六边形，可密铺：水平间距40，行间距30，奇数行偏移20
-      return [
-        { x: 0, y: -20 },
+        { x: -20, y: -10 },
         { x: 20, y: -10 },
         { x: 20, y: 10 },
-        { x: 0, y: 20 },
         { x: -20, y: 10 },
-        { x: -20, y: -10 },
       ];
+    case "parallelogram":
+      return [
+        { x: -20, y: -10 },
+        { x: 20, y: -10 },
+        { x: 30, y: 10 },
+        { x: -10, y: 10 },
+      ];
+    case "trapezoid":
+      return [
+        { x: -10, y: -10 },
+        { x: 10, y: -10 },
+        { x: 20, y: 10 },
+        { x: -20, y: 10 },
+      ];
+    case "hexagon":
+      return regularPolygonPoints(6, 20);
     case "pentagon":
       return regularPolygonPoints(5, 20);
     case "octagon":
@@ -112,13 +94,26 @@ export default function DragPlayground() {
   const addShape = (type: ShapeType) => {
     const config = shapeConfigs.find((s) => s.id === type)!;
     const baseIcon = getBasePoints(type);
+    let x: number, y: number;
+    if (type === "hexagon") {
+      // 正六边形使用密铺网格：x 半步 = r√3/2，y 行距 = 1.5r
+      x = Math.round((60 + Math.random() * 100) / HEX_HALF_STEP) * HEX_HALF_STEP;
+      y = Math.round((60 + Math.random() * 100) / HEX_ROW_STEP) * HEX_ROW_STEP;
+    } else if (type === "equilateral-triangle") {
+      // 正三角形：x 用密铺半步（可拼菱形/边贴边），y 用普通网格（一正一反 y 只差 r/2=10）
+      x = Math.round((60 + Math.random() * 100) / HEX_HALF_STEP) * HEX_HALF_STEP;
+      y = Math.round((60 + Math.random() * 100) / SNAP_GRID) * SNAP_GRID;
+    } else {
+      x = Math.round((60 + Math.random() * 100) / SNAP_GRID) * SNAP_GRID;
+      y = Math.round((60 + Math.random() * 100) / SNAP_GRID) * SNAP_GRID;
+    }
     const newShape: DraggedShape = {
       id: `shape-${idCounter.current++}`,
       type,
       points: baseIcon,
       color: config.color,
-      x: Math.round((60 + Math.random() * 100) / 10) * 10,
-      y: Math.round((60 + Math.random() * 100) / 10) * 10,
+      x,
+      y,
       rotation: 0,
     };
     setShapes((prev) => [...prev, newShape]);
@@ -133,6 +128,11 @@ export default function DragPlayground() {
   };
 
   const SNAP_GRID = 10;
+
+  // 正六边形/正三角形专属吸附参数：基于半径20
+  // 水平半步长 = r * √3 / 2，两个图形边贴边正好是这个间距的2倍
+  const HEX_HALF_STEP = 20 * Math.sqrt(3) / 2; // ≈ 17.32
+  const HEX_ROW_STEP = 20 * 1.5; // 行间距 = 30（三角形高=30，六边形行距=30）
 
   // 将客户端坐标转换为 SVG viewBox 坐标
   const clientToViewBox = useCallback((clientX: number, clientY: number) => {
@@ -169,14 +169,25 @@ export default function DragPlayground() {
       let x = vbPos.x - dragOffset.x;
       let y = vbPos.y - dragOffset.y;
       if (snapToGrid) {
-        x = Math.round(x / SNAP_GRID) * SNAP_GRID;
-        y = Math.round(y / SNAP_GRID) * SNAP_GRID;
+        const shape = shapes.find((s) => s.id === dragging);
+        if (shape?.type === "hexagon") {
+          // 正六边形使用密铺网格吸附：边与边正好贴合
+          x = Math.round(x / HEX_HALF_STEP) * HEX_HALF_STEP;
+          y = Math.round(y / HEX_ROW_STEP) * HEX_ROW_STEP;
+        } else if (shape?.type === "equilateral-triangle") {
+          // 正三角形：x 密铺半步，y 普通网格（一正一反 y 只差 r/2=10）
+          x = Math.round(x / HEX_HALF_STEP) * HEX_HALF_STEP;
+          y = Math.round(y / SNAP_GRID) * SNAP_GRID;
+        } else {
+          x = Math.round(x / SNAP_GRID) * SNAP_GRID;
+          y = Math.round(y / SNAP_GRID) * SNAP_GRID;
+        }
       }
       setShapes((prev) =>
         prev.map((s) => (s.id === dragging ? { ...s, x, y } : s))
       );
     },
-    [dragging, dragOffset, snapToGrid, clientToViewBox]
+    [dragging, dragOffset, snapToGrid, clientToViewBox, shapes]
   );
 
   // 统一的拖拽结束处理
@@ -185,14 +196,16 @@ export default function DragPlayground() {
       const movedShape = shapes.find((s) => s.id === dragging);
       if (movedShape) {
         const movedPts = getTransformedPoints(movedShape);
+        let hasOverlap = false;
         for (const other of shapes) {
           if (other.id === dragging) continue;
           const otherPts = getTransformedPoints(other);
           if (polygonsOverlap(movedPts, otherPts)) {
-            setWarning("可能有重叠，请检查！");
+            hasOverlap = true;
             break;
           }
         }
+        setWarning(hasOverlap ? "可能有重叠，请检查！" : null);
       }
     }
     setDragging(null);
@@ -406,21 +419,27 @@ export default function DragPlayground() {
 
           {warning && (
             <div
-              className="fade-in"
               style={{
                 position: "absolute",
                 bottom: 10,
                 left: "50%",
                 transform: "translateX(-50%)",
-                background: "var(--danger-light)",
-                color: "var(--danger)",
-                padding: "8px 16px",
-                borderRadius: "var(--radius-sm)",
-                fontSize: "14px",
-                fontWeight: 600,
               }}
             >
-              {warning}
+              <div
+                className="fade-in"
+                style={{
+                  background: "var(--danger-light)",
+                  color: "var(--danger)",
+                  padding: "8px 16px",
+                  borderRadius: "var(--radius-sm)",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {warning}
+              </div>
             </div>
           )}
 

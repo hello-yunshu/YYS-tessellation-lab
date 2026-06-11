@@ -2,10 +2,23 @@ import React, { useState } from "react";
 import { useApp } from "../AppContext";
 import AIExplainButton from "./AIExplainButton";
 
-function TilingDemo({ type }: { type: "perfect" | "gap" | "overlap" }) {
+function TilingDemo({ type, revealed, animTrigger }: { type: "perfect" | "gap" | "overlap"; revealed: boolean; animTrigger: number }) {
   const size = 20;
   const gap = type === "gap" ? 6 : type === "overlap" ? -4 : 0;
   const colors = ["#A8D8EA", "#FFD3B6", "#DCEED1", "#AA96DA", "#FCBAD3", "#FFFFD2"];
+  const animActive = revealed || animTrigger > 0;
+  const animClass = animActive ? `tile-anim tile-anim-${type}` : "";
+  // 用 key 强制重挂载 <g>，每次 animTrigger 变化都能重播动画
+  const gKey = animTrigger || 0;
+
+  // 情况A 每个方块的随机动画延迟（涟漪效果）
+  const perfectDelays = React.useMemo(() => {
+    const delays: number[] = [];
+    for (let i = 0; i < 12; i++) {
+      delays.push(Math.round(Math.random() * 500) / 1000); // 0 ~ 0.5s
+    }
+    return delays;
+  }, []);
 
   if (type === "perfect") {
     const tiles: { x: number; y: number; color: string }[] = [];
@@ -18,15 +31,21 @@ function TilingDemo({ type }: { type: "perfect" | "gap" | "overlap" }) {
         });
       }
     }
-    // 精确 viewBox：内容居中 + 四周等距 padding，确保不超出画布
     const cols = 4, rows = 3, pad = 4;
     const cw = (cols - 1) * (size + gap) + size;
     const ch = (rows - 1) * (size + gap) + size;
     return (
       <svg viewBox={`${-pad} ${-pad} ${cw + pad * 2} ${ch + pad * 2}`} xmlns="http://www.w3.org/2000/svg">
-        {tiles.map((t, i) => (
-          <rect key={i} x={t.x} y={t.y} width={size} height={size} fill={t.color} rx="2" />
-        ))}
+        <g key={gKey} className={animClass}>
+          {tiles.map((t, i) => (
+            <rect
+              key={i}
+              x={t.x} y={t.y} width={size} height={size}
+              fill={t.color} rx="2"
+              style={{ '--delay': `${perfectDelays[i]}s` } as React.CSSProperties}
+            />
+          ))}
+        </g>
       </svg>
     );
   }
@@ -42,7 +61,6 @@ function TilingDemo({ type }: { type: "perfect" | "gap" | "overlap" }) {
         });
       }
     }
-    // 精确 viewBox：内容居中 + 四周等距 padding，确保不超出画布
     const cols = 4, rows = 3, pad = 4;
     const cw = (cols - 1) * (size + gap) + size;
     const ch = (rows - 1) * (size + gap) + size;
@@ -51,9 +69,11 @@ function TilingDemo({ type }: { type: "perfect" | "gap" | "overlap" }) {
     return (
       <svg viewBox={`${-pad} ${-pad} ${vbW} ${vbH}`} xmlns="http://www.w3.org/2000/svg">
         <rect x={-pad} y={-pad} width={vbW} height={vbH} fill="#f5f5f5" />
-        {tiles2.map((t, i) => (
-          <rect key={i} x={t.x} y={t.y} width={size} height={size} fill={t.color} rx="2" />
-        ))}
+        <g key={gKey} className={animClass}>
+          {tiles2.map((t, i) => (
+            <rect key={i} x={t.x} y={t.y} width={size} height={size} fill={t.color} rx="2" />
+          ))}
+        </g>
       </svg>
     );
   }
@@ -78,7 +98,6 @@ function TilingDemo({ type }: { type: "perfect" | "gap" | "overlap" }) {
     return tiles;
   }, []);
 
-  // 精确计算 viewBox：最右/最下边缘 = 最后一个瓦片的右下角
   const cols = 4;
   const rows = 3;
   const padding = 2;
@@ -87,17 +106,19 @@ function TilingDemo({ type }: { type: "perfect" | "gap" | "overlap" }) {
 
   return (
     <svg viewBox={`${-padding} ${-padding} ${exactW} ${exactH}`} xmlns="http://www.w3.org/2000/svg">
-      {tiles3.map((t, i) => (
-        <rect key={i} x={t.x} y={t.y} width={size} height={size} fill={t.color} rx="2" opacity="0.85" stroke="#666" strokeWidth="1" />
-      ))}
+      <g key={gKey} className={animClass}>
+        {tiles3.map((t, i) => (
+          <rect key={i} x={t.x} y={t.y} width={size} height={size} fill={t.color} rx="2" opacity="0.85" stroke="#666" strokeWidth="1" />
+        ))}
+      </g>
     </svg>
   );
 }
 
 const judgments = [
-  { type: "perfect" as const, label: "正确密铺" },
-  { type: "gap" as const, label: "有空隙" },
-  { type: "overlap" as const, label: "有重叠" },
+  { type: "perfect" as const, label: "情况 A" },
+  { type: "gap" as const, label: "情况 B" },
+  { type: "overlap" as const, label: "情况 C" },
 ];
 
 function getJudgment(type: string) {
@@ -116,9 +137,14 @@ function getJudgment(type: string) {
 export default function DefinitionCompare() {
   const { teacherMode } = useApp();
   const [revealed, setRevealed] = useState<Record<string, boolean>>({});
+  const [animCount, setAnimCount] = useState<Record<string, number>>({});
 
   const toggleReveal = (type: string) => {
     setRevealed((prev) => ({ ...prev, [type]: !prev[type] }));
+  };
+
+  const triggerAnim = (type: string) => {
+    setAnimCount((prev) => ({ ...prev, [type]: (prev[type] || 0) + 1 }));
   };
 
   return (
@@ -136,7 +162,13 @@ export default function DefinitionCompare() {
           const shown = revealed[j.type];
           return (
             <div key={j.type} className="compare-item">
-              <TilingDemo type={j.type} />
+              <div
+                onClick={() => triggerAnim(j.type)}
+                style={{ cursor: "pointer" }}
+                title="点击查看动画"
+              >
+                <TilingDemo type={j.type} revealed={!!revealed[j.type]} animTrigger={animCount[j.type] || 0} />
+              </div>
               <p style={{ fontWeight: 600, margin: "8px 0" }}>{j.label}</p>
               {!shown ? (
                 <button className="btn btn-outline btn-sm" onClick={() => toggleReveal(j.type)}>
