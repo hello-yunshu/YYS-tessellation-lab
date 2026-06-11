@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { shapeConfigs, type ShapeType } from "../utils/tiling";
 import {
   regularPolygonPoints,
@@ -90,6 +90,34 @@ export default function DragPlayground() {
   const wasDraggingRef = useRef(false);
   const canvasRef = useRef<HTMLDivElement>(null);
   const idCounter = useRef(0);
+
+  // 网格线是静态的，用 useMemo 缓存避免每次渲染重建 102 条线
+  const gridLines = useMemo(() => (
+    <>
+      {Array.from({ length: 61 }).map((_, i) => (
+        <line
+          key={`gv-${i}`}
+          x1={i * 10}
+          y1={0}
+          x2={i * 10}
+          y2={VB_HEIGHT}
+          stroke={i % 5 === 0 ? "#d0d0d0" : "#e8e8e8"}
+          strokeWidth={i % 5 === 0 ? "0.8" : "0.4"}
+        />
+      ))}
+      {Array.from({ length: 41 }).map((_, i) => (
+        <line
+          key={`gh-${i}`}
+          x1={0}
+          y1={i * 10}
+          x2={VB_WIDTH}
+          y2={i * 10}
+          stroke={i % 5 === 0 ? "#d0d0d0" : "#e8e8e8"}
+          strokeWidth={i % 5 === 0 ? "0.8" : "0.4"}
+        />
+      ))}
+    </>
+  ), []);
 
   const addShape = (type: ShapeType) => {
     const config = shapeConfigs.find((s) => s.id === type)!;
@@ -371,30 +399,7 @@ export default function DragPlayground() {
         >
           <svg viewBox={`0 0 ${VB_WIDTH} ${VB_HEIGHT}`} xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
             {/* Grid - matches SNAP_GRID=10, major lines every 50 */}
-            {snapToGrid &&
-              Array.from({ length: 61 }).map((_, i) => (
-                <line
-                  key={`gv-${i}`}
-                  x1={i * 10}
-                  y1={0}
-                  x2={i * 10}
-                  y2={VB_HEIGHT}
-                  stroke={i % 5 === 0 ? "#d0d0d0" : "#e8e8e8"}
-                  strokeWidth={i % 5 === 0 ? "0.8" : "0.4"}
-                />
-              ))}
-            {snapToGrid &&
-              Array.from({ length: 41 }).map((_, i) => (
-                <line
-                  key={`gh-${i}`}
-                  x1={0}
-                  y1={i * 10}
-                  x2={VB_WIDTH}
-                  y2={i * 10}
-                  stroke={i % 5 === 0 ? "#d0d0d0" : "#e8e8e8"}
-                  strokeWidth={i % 5 === 0 ? "0.8" : "0.4"}
-                />
-              ))}
+            {snapToGrid && gridLines}
             {shapes.map((shape) => {
               const pts = getTransformedPoints(shape);
               const isSelected = selectedId === shape.id || dragging === shape.id;
@@ -455,7 +460,7 @@ export default function DragPlayground() {
                 pointerEvents: "none",
               }}
             >
-              从左侧工具箱拖入图形开始拼摆
+              点击工具箱图形开始拼摆
             </div>
           )}
         </div>

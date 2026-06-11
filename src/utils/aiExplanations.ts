@@ -93,7 +93,7 @@ export const aiExplanations: AIExplanation[] = [
     aiContribution:
       "教师可以说：我想要一个拖拽拼摆区，学生可以从工具箱拖出图形到画布上，还能旋转图形，图形重叠时有提示，还能吸附到网格。AI 可以实现拖拽、旋转、碰撞检测和吸附功能。",
     promptExample:
-      "请实现一个拖拽拼摆区：左侧工具箱有各种图形可点击添加到右侧画布，图形可以旋转 15°、30°、45°、60°、90°，可以删除图形，可以一键清空，支持网格吸附。",
+      "请实现一个拖拽拼摆区：工具箱有各种图形可点击添加到画布，图形可以旋转 15°、30°、45°、60°、90°，可以删除图形，可以一键清空，支持网格吸附。",
     technicalIdea:
       "使用 React 的鼠标和触屏事件实现拖拽。用 SVG transform 实现旋转。碰撞检测使用 SAT（分离轴定理）算法精确判断多边形重叠。网格吸附功能支持正六边形和正三角形的专用密铺网格。",
     iterationIdeas: [
@@ -195,6 +195,11 @@ export const aiExplanations: AIExplanation[] = [
   },
 ];
 
+// 用 Map 缓存，避免每次 .find() 遍历整个数组
+const aiExplanationMap = new Map<string, AIExplanation>(
+  aiExplanations.map((e) => [e.id, e])
+);
+
 export function getAIExplanation(id: string): AIExplanation | undefined {
-  return aiExplanations.find((e) => e.id === id);
+  return aiExplanationMap.get(id);
 }
