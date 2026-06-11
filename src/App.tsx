@@ -109,6 +109,7 @@ function FlowSidebar() {
               key={step.id}
               className={`flow-step ${activeStep === step.scrollTo ? "active" : ""}`}
               onClick={() => scrollTo(step.scrollTo)}
+              onTouchStart={(e) => e.stopPropagation()}
             >
               <span className="flow-step-num">{step.num}</span>
               {step.label}

@@ -205,7 +205,7 @@ export default function QuestionBox() {
 
       {!upgrading && !allExhausted && !question && (
         <p style={{ color: "var(--text-muted)", marginBottom: "12px" }}>
-          点击按钮，从「{currentLabel}」中随机抽题
+          点击按钮，从「{currentLabel}」中随机挑战
         </p>
       )}
 

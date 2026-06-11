@@ -10,9 +10,13 @@ export default function AngleExplorer() {
 
   if (!config.angleInfo) {
     return (
-      <div className="card" style={{ textAlign: "center", padding: "40px" }}>
+      <div className="card angle-explorer" data-ai-explain-id="angle-explorer" style={{ textAlign: "center", padding: "40px", position: "relative" }}>
+        <AIExplainButton explainId="angle-explorer" />
+        <h2 style={{ fontSize: "var(--font-size-xl)", marginBottom: "16px", color: "var(--text)" }}>
+          角度观察器
+        </h2>
         <p style={{ color: "var(--text-secondary)" }}>
-          选择正三角形、正方形、正六边形或正五边形来查看角度演示。
+          选择正三角形、正方形、长方形、正六边形或正五边形来查看角度演示。
         </p>
       </div>
     );

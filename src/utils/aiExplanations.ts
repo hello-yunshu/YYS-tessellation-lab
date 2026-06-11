@@ -15,7 +15,7 @@ export const aiExplanations: AIExplanation[] = [
   {
     id: "life-examples",
     title: "生活导入模块",
-    implementationTime: "约15分钟（含AI生成SVG图案和提示文案）",
+    implementationTime: "约5分钟（SVG图案+揭示按钮）",
     teachingPurpose:
       "用地砖、蜂巢、马赛克等生活图案，把学生已有经验和数学概念连接起来，帮助学生从生活现象中抽象出密铺的共同特征。",
     aiContribution:
@@ -33,7 +33,7 @@ export const aiExplanations: AIExplanation[] = [
   {
     id: "definition-compare",
     title: "密铺定义对比模块",
-    implementationTime: "约20分钟（三种SVG对比图+判断逻辑）",
+    implementationTime: "约8分钟（三种SVG对比图+判断逻辑）",
     teachingPurpose:
       "让学生通过对比正确密铺、有空隙、有重叠三种情况，真正理解密铺的两个核心条件：无空隙、不重叠。",
     aiContribution:
@@ -51,7 +51,7 @@ export const aiExplanations: AIExplanation[] = [
   {
     id: "tiling-lab",
     title: "图形密铺实验室",
-    implementationTime: "约45分钟（7种图形生成算法+SVG渲染）",
+    implementationTime: "约15分钟（9种图形生成算法+SVG渲染）",
     teachingPurpose:
       "让学生通过点击不同图形、观察它们的密铺效果，自己发现哪些图形能密铺、哪些不能，从而理解密铺的条件。",
     aiContribution:
@@ -59,26 +59,25 @@ export const aiExplanations: AIExplanation[] = [
     promptExample:
       "请做一个图形密铺实验室，包含正三角形、正方形、长方形、平行四边形、梯形、正六边形、正五边形、正八边形、正八边形+正方形组合。点击后在画布上自动生成密铺图案。",
     technicalIdea:
-      "每种图形的密铺生成器用独立的函数实现，根据图形几何特性计算平移向量和旋转角度。正多边形用 regularPolygonPoints 生成顶点，用 translatePoints 排列。SVG polygon 渲染每个 tile。",
+      "每种图形的密铺生成器用独立的函数实现，根据图形几何特性计算平移向量和旋转角度。正多边形用 regularPolygonPoints 生成顶点，用 translatePoints 排列。SVG polygon 渲染每个 tile，切换图形时有 drop 波浪动画。",
     iterationIdeas: [
       "支持自定义图形（用户输入边长和角度）。",
       "支持颜色主题切换。",
-      "支持动画展示密铺生成过程。",
       "加入声音反馈（密铺成功提示音）。",
     ],
   },
   {
     id: "angle-explorer",
     title: "角度观察器",
-    implementationTime: "约25分钟（扇形SVG动画+角度计算逻辑）",
+    implementationTime: "约8分钟（扇形SVG+角度计算逻辑）",
     teachingPurpose:
       "用角度解释密铺的数学原理：判断一个正多边形能否单独密铺，关键是看它的内角能否整除 360°。通过'围在一点周围'的视觉演示让学生直观理解。",
     aiContribution:
-      "教师可以描述：正三角形一个角是 60°，6 个围在一起正好 360°；正方形 90°，4 个围满；正五边形 108°，3 个不够 4 个多了。AI 可以生成扇形动画演示。",
+      "教师可以描述：正三角形一个角是 60°，6 个围在一起正好 360°；正方形 90°，4 个围满；正五边形 108°，3 个不够 4 个多了。AI 可以生成扇形演示。",
     promptExample:
       "请设计一个角度观察器：选择正多边形后，显示围绕一个点的角度演示。点击'增加一个角'按钮，围绕中心逐个出现扇形。当正好拼成 360° 时显示'刚好铺满一周'。",
     technicalIdea:
-      "用 SVG path 画扇形（arc 指令），围绕中心点旋转排列。用 React state 跟踪已添加的角度总和，实时判断是否达到、超过或不足 360°。",
+      "用 SVG path 画扇形（arc 指令），围绕中心点旋转排列。用 React state 跟踪已添加的角度总和，实时判断是否达到、超过或不足 360°。支持增加/减少/重置操作。",
     iterationIdeas: [
       "支持任意角度输入（不只是正多边形）。",
       "展示多种组合方式（如正八边形+正方形）。",
@@ -88,53 +87,52 @@ export const aiExplanations: AIExplanation[] = [
   {
     id: "drag-playground",
     title: "拖拽拼摆区",
-    implementationTime: "约40分钟（拖拽交互+旋转变换+碰撞检测）",
+    implementationTime: "约15分钟（拖拽交互+旋转变换+SAT碰撞检测+网格吸附）",
     teachingPurpose:
       "给学生一个自由探索的空间，让他们自己拖动图形尝试拼摆，通过实际操作体验密铺的含义和条件。",
     aiContribution:
-      "教师可以说：我想要一个拖拽拼摆区，学生可以从工具箱拖出图形到画布上，还能旋转图形。AI 可以实现基础拖拽、旋转、重叠检测等功能。",
+      "教师可以说：我想要一个拖拽拼摆区，学生可以从工具箱拖出图形到画布上，还能旋转图形，图形重叠时有提示，还能吸附到网格。AI 可以实现拖拽、旋转、碰撞检测和吸附功能。",
     promptExample:
-      "请实现一个拖拽拼摆区：左侧工具箱有各种图形可拖入右侧画布，图形可以旋转 15°、30°、45°、60°、90°，可以删除图形，可以一键清空。",
+      "请实现一个拖拽拼摆区：左侧工具箱有各种图形可点击添加到右侧画布，图形可以旋转 15°、30°、45°、60°、90°，可以删除图形，可以一键清空，支持网格吸附。",
     technicalIdea:
-      "使用 React 的鼠标事件（onMouseDown/onMouseMove/onMouseUp）实现拖拽。用 SVG transform 实现旋转。包围盒重叠检测用 rectsOverlap 判断。",
+      "使用 React 的鼠标和触屏事件实现拖拽。用 SVG transform 实现旋转。碰撞检测使用 SAT（分离轴定理）算法精确判断多边形重叠。网格吸附功能支持正六边形和正三角形的专用密铺网格。",
     iterationIdeas: [
-      "添加真正的碰撞检测（SAT 算法）。",
-      "支持多点触控。",
       "支持图形缩放。",
-      "添加自动对齐/吸附功能。",
+      "支持多点触控。",
+      "添加自动对齐到相邻图形边缘。",
     ],
   },
   {
     id: "question-box",
     title: "课堂提问模块",
-    implementationTime: "约10分钟（问题列表+随机抽取逻辑）",
+    implementationTime: "约10分钟（三级难度递进+升级动画+进度追踪）",
     teachingPurpose:
-      "为教师提供随机课堂问题，帮助引导课堂讨论和激发学生思考，避免教师临场想不出合适的问题。",
+      "为教师提供随机课堂挑战，按观察、推理、创造三级难度递进，帮助学生从浅入深地思考密铺问题，激发课堂讨论。",
     aiContribution:
-      "教师可以说：请帮我设计一个随机课堂提问按钮，每点一次出一个适合五年级学生讨论的密铺问题。AI 可以生成一系列层层递进的教学问题。",
+      "教师可以说：请帮我设计一个随机挑战按钮，问题分三级难度，答够几题自动升级，让学生越挑战越深入。AI 可以生成层层递进的教学问题并实现难度递进逻辑。",
     promptExample:
-      "请为《奇妙的图形密铺》设计一组课堂提问问题，让学生从观察、比较、到推理、创造，逐步深入。点击按钮随机显示一个问题。",
+      "请为《奇妙的图形密铺》设计一组课堂挑战问题，分三级难度（观察类★、推理类★★、创造类★★★），每级随机出题，答够2~3题自动升级到下一难度，带升级动画和进度条。",
     technicalIdea:
-      "用数组存储问题列表，点击时随机选取并显示。排除已显示的问题避免重复。简单的 React state 管理。",
+      "问题按星级分类存储，用 React state 管理当前难度级别、已答题数和升级目标。每级随机抽取未出过的题目，达到目标数量后触发升级动画（setTimeout + CSS transition），自动切换到下一难度。进度条和星级指示器实时反映当前状态。",
     iterationIdeas: [
-      "按难度分类（观察类、推理类、创造类）。",
       "支持教师自定义添加问题。",
-      "记录已提问过的历史。",
       "加入计时器，提示学生思考时间。",
+      "记录每道题的学生回答。",
+      "支持学生自选难度级别。",
     ],
   },
   {
     id: "classroom-flow",
     title: "课堂流程侧栏",
-    implementationTime: "约15分钟（折叠侧栏导航+滚动定位）",
+    implementationTime: "约8分钟（折叠侧栏导航+滚动定位+拖拽重定位+触屏适配）",
     teachingPurpose:
-      "为教师提供清晰的课堂流程导航，让教师知道按什么顺序引导学生，每个环节可以一键切换到对应模块。",
+      "为教师提供清晰的课堂流程导航，让教师知道按什么顺序引导学生，每个环节可以一键切换到对应模块。侧栏可拖拽调整位置，触屏设备上不会误触滚动页面。",
     aiContribution:
-      "教师可以说：请加入一个课堂流程侧栏，展示看一看、想一想、试一试、说一说、画一画、找一找六个环节，每个环节可以点击切换到对应区域。AI 可以实现折叠式侧栏导航。",
+      "教师可以说：请加入一个课堂流程侧栏，展示看一看、想一想、试一试、说一说、画一画、找一找六个环节，每个环节可以点击切换到对应区域，侧栏还能上下拖动调整位置，在平板上操作不会误滚动页面。AI 可以实现折叠式侧栏导航并处理触屏交互。",
     promptExample:
-      "请设计一个折叠式课堂流程侧栏，包含六个教学环节，每个环节旁边有按钮可以跳转到页面中的对应演示模块。",
+      "请设计一个折叠式课堂流程侧栏，包含六个教学环节，每个环节旁边有按钮可以跳转到页面中的对应演示模块。侧栏可以上下拖拽调整位置，触屏设备上操作不会导致页面滚动。",
     technicalIdea:
-      "用 React state 管理侧栏折叠状态和当前活动环节。用 scrollIntoView 或 ref 实现跳转。用 CSS transition 实现折叠动画。",
+      "用 React state 管理侧栏折叠状态和当前活动环节。用 scrollIntoView 实现跳转。拖拽重定位通过 mousedown/touchstart 记录起始位置，mousemove/touchmove 实时更新 top 值，区分拖拽与点击避免误触。CSS touch-action: none 阻止触屏滚动穿透，touchmove 事件 passive: false 配合 preventDefault 防止页面跟随滚动。",
     iterationIdeas: [
       "记录当前教学进度，自动高亮当前环节。",
       "支持教师自定义环节顺序。",
@@ -144,7 +142,7 @@ export const aiExplanations: AIExplanation[] = [
   {
     id: "summary-panel",
     title: "总结区",
-    implementationTime: "约10分钟（可折叠面板+知识点列表）",
+    implementationTime: "约3分钟（可折叠面板+知识点列表）",
     teachingPurpose:
       "在课堂结尾帮助学生回顾和整理本节核心知识点，形成完整的知识结构。",
     aiContribution:
@@ -162,7 +160,7 @@ export const aiExplanations: AIExplanation[] = [
   {
     id: "teacher-mode",
     title: "教师模式",
-    implementationTime: "约20分钟（React Context全局状态+条件渲染）",
+    implementationTime: "约5分钟（React Context全局状态+条件渲染）",
     teachingPurpose:
       "课堂演示时只显示图形和问题，让学生先观察猜想；教师模式开启后显示结论和教学提示，支持教师讲解验证。",
     aiContribution:
@@ -180,7 +178,7 @@ export const aiExplanations: AIExplanation[] = [
   {
     id: "github-pages",
     title: "GitHub Pages 部署",
-    implementationTime: "约30分钟（Vite配置+GitHub Actions工作流）",
+    implementationTime: "约10分钟（Vite配置+GitHub Actions工作流）",
     teachingPurpose:
       "让教师无需服务器就能把网页部署到公网，方便课堂使用和分享。展示如何用 GitHub Actions 自动构建和部署。",
     aiContribution:

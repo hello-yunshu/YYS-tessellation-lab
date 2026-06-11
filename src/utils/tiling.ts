@@ -385,6 +385,11 @@ export const shapeConfigs: ShapeConfig[] = [
     canTile: true,
     canTileAlone: true,
     explanation: "可以密铺。长方形四个角都是90°，4个长方形围在一个点刚好360°。",
+    angleInfo: {
+      interiorAngle: 90,
+      aroundPoint: "90° × 4 = 360°",
+      conclusion: "4个90°角正好拼成360°，所以长方形可以密铺。",
+    },
     color: "#FCBAD3",
     generateTiles: (cols, rows, size) => generateRectTiles(cols, rows, size),
   },
