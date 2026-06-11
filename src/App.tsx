@@ -1,17 +1,19 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { AppProvider, useApp } from "./AppContext";
 import Header from "./components/Header";
 import TeacherModeToggle from "./components/TeacherModeToggle";
 import AIExplainModeToggle from "./components/AIExplainModeToggle";
 import LifeExamples from "./components/LifeExamples";
-import DefinitionCompare from "./components/DefinitionCompare";
-import ShapeSelector from "./components/ShapeSelector";
-import TilingCanvas from "./components/TilingCanvas";
-import AngleExplorer from "./components/AngleExplorer";
-import DragPlayground from "./components/DragPlayground";
-import QuestionBox from "./components/QuestionBox";
-import SummaryPanel from "./components/SummaryPanel";
 import AIExplanationOverlay from "./components/AIExplanationOverlay";
+
+// 首屏以下组件懒加载，减少初始 JS 体积
+const DefinitionCompare = lazy(() => import("./components/DefinitionCompare"));
+const ShapeSelector = lazy(() => import("./components/ShapeSelector"));
+const TilingCanvas = lazy(() => import("./components/TilingCanvas"));
+const AngleExplorer = lazy(() => import("./components/AngleExplorer"));
+const DragPlayground = lazy(() => import("./components/DragPlayground"));
+const QuestionBox = lazy(() => import("./components/QuestionBox"));
+const SummaryPanel = lazy(() => import("./components/SummaryPanel"));
 
 // 课堂流程侧栏
 const flowSteps = [
@@ -251,78 +253,90 @@ function AppContent() {
 
       {/* Module 2: Definition Compare */}
       <div id="definition" style={{ marginTop: "20px" }}>
-        <DefinitionCompare />
+        <Suspense fallback={null}>
+          <DefinitionCompare />
+        </Suspense>
       </div>
 
       {/* Module 3: Tiling Lab */}
       <div id="lab" style={{ marginTop: "20px" }}>
-        <section className="card" data-ai-explain-id="tiling-lab" style={{ position: "relative" }}>
-          <div
-            className={`ai-badge ${aiExplainMode ? "ai-badge-visible" : ""}`}
-            data-ai-explain-trigger="tiling-lab"
-            title="查看这个功能如何由 AI 辅助实现"
-          >
-            AI
-          </div>
-          <h2 style={{ fontSize: "var(--font-size-xl)", marginBottom: "16px", color: "var(--text)" }}>
-            图形密铺实验室
-          </h2>
-          <p style={{ color: "var(--text-secondary)", marginBottom: "8px" }}>
-            选择一种图形，观察它是否能密铺。
-          </p>
+        <Suspense fallback={null}>
+          <section className="card" data-ai-explain-id="tiling-lab" style={{ position: "relative" }}>
+            <div
+              className={`ai-badge ${aiExplainMode ? "ai-badge-visible" : ""}`}
+              data-ai-explain-trigger="tiling-lab"
+              title="查看这个功能如何由 AI 辅助实现"
+            >
+              AI
+            </div>
+            <h2 style={{ fontSize: "var(--font-size-xl)", marginBottom: "16px", color: "var(--text)" }}>
+              图形密铺实验室
+            </h2>
+            <p style={{ color: "var(--text-secondary)", marginBottom: "8px" }}>
+              选择一种图形，观察它是否能密铺。
+            </p>
 
-          <ShapeSelector />
+            <ShapeSelector />
 
-          {/* Controls */}
-          <div className="controls">
-            <label>
-              <input
-                type="checkbox"
-                checked={showBorders}
-                onChange={(e) => setShowBorders(e.target.checked)}
-              />
-              显示边线
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={showVertices}
-                onChange={(e) => setShowVertices(e.target.checked)}
-              />
-              显示顶点
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={showConclusion}
-                onChange={(e) => setShowConclusion(e.target.checked)}
-              />
-              显示判断结论
-            </label>
-          </div>
+            {/* Controls */}
+            <div className="controls">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={showBorders}
+                  onChange={(e) => setShowBorders(e.target.checked)}
+                />
+                显示边线
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={showVertices}
+                  onChange={(e) => setShowVertices(e.target.checked)}
+                />
+                显示顶点
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={showConclusion}
+                  onChange={(e) => setShowConclusion(e.target.checked)}
+                />
+                显示判断结论
+              </label>
+            </div>
 
-          <TilingCanvas />
-        </section>
+            <TilingCanvas />
+          </section>
+        </Suspense>
       </div>
 
       {/* Module 4: Angle Explorer */}
       <div id="angle" style={{ marginTop: "20px" }}>
-        <AngleExplorer />
+        <Suspense fallback={null}>
+          <AngleExplorer />
+        </Suspense>
       </div>
 
       {/* Module 5: Drag Playground */}
       <div id="drag" style={{ marginTop: "20px" }}>
-        <DragPlayground />
+        <Suspense fallback={null}>
+          <DragPlayground />
+        </Suspense>
       </div>
 
       {/* Module 6: Question Box */}
       <div id="question" style={{ marginTop: "20px" }}>
-        <QuestionBox />
+        <Suspense fallback={null}>
+          <QuestionBox />
+        </Suspense>
       </div>
 
       {/* Module 7: Summary */}
       <div id="summary" style={{ marginTop: "20px" }}>
-        <SummaryPanel />
+        <Suspense fallback={null}>
+          <SummaryPanel />
+        </Suspense>
       </div>
 
       {/* Footer */}

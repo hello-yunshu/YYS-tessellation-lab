@@ -459,6 +459,11 @@ export const shapeConfigs: ShapeConfig[] = [
   },
 ];
 
+// 用 Map 缓存，避免每次 .find() 遍历整个数组
+const shapeConfigMap = new Map<ShapeType, ShapeConfig>(
+  shapeConfigs.map((s) => [s.id, s])
+);
+
 export function getShapeConfig(type: ShapeType): ShapeConfig {
-  return shapeConfigs.find((s) => s.id === type)!;
+  return shapeConfigMap.get(type)!;
 }

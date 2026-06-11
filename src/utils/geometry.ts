@@ -38,8 +38,14 @@ export function distance(a: Point, b: Point): number {
   return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
 }
 
-/** 生成正多边形的顶点（中心在原点，一个顶点在正上方） */
+/** 生成正多边形的顶点（中心在原点，一个顶点在正上方）— 带 LRU 缓存 */
+const _polyCache = new Map<string, Point[]>();
+const POLY_CACHE_MAX = 32;
+
 export function regularPolygonPoints(n: number, radius: number): Point[] {
+  const key = `${n}:${radius}`;
+  const cached = _polyCache.get(key);
+  if (cached) return cached;
   const points: Point[] = [];
   for (let i = 0; i < n; i++) {
     // 从顶部开始 (-90°)，顺时针排列
@@ -49,6 +55,12 @@ export function regularPolygonPoints(n: number, radius: number): Point[] {
       y: radius * Math.sin(angle),
     });
   }
+  if (_polyCache.size >= POLY_CACHE_MAX) {
+    // 删除最早插入的条目
+    const firstKey = _polyCache.keys().next().value;
+    if (firstKey !== undefined) _polyCache.delete(firstKey);
+  }
+  _polyCache.set(key, points);
   return points;
 }
 
@@ -92,9 +104,15 @@ export function polygonCenter(pts: Point[]): Point {
   return { x: cx / pts.length, y: cy / pts.length };
 }
 
-/** 将多边形的点转为 SVG polygon 的 points 属性字符串 */
+/** 将多边形的点转为 SVG polygon 的 points 属性字符串 — 带缓存 */
+const _svgCache = new WeakMap<Point[], string>();
+
 export function pointsToSvg(points: Point[]): string {
-  return points.map((p) => `${p.x},${p.y}`).join(" ");
+  const cached = _svgCache.get(points);
+  if (cached) return cached;
+  const result = points.map((p) => `${p.x},${p.y}`).join(" ");
+  _svgCache.set(points, result);
+  return result;
 }
 
 /** 带圆角的 points 属性 */
