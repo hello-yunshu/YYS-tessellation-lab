@@ -26,6 +26,10 @@ const flowSteps = [
 function FlowSidebar() {
   const [open, setOpen] = useState(false);
   const [activeStep, setActiveStep] = useState("");
+  const [sidebarY, setSidebarY] = useState<number | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const dragStartRef = useRef({ mouseY: 0, sidebarY: 0 });
+  const wasDraggedRef = useRef(false);
 
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
@@ -35,9 +39,67 @@ function FlowSidebar() {
     }
   };
 
+  // 面板整体上下拖拽
+  const handleToggleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    wasDraggedRef.current = false;
+    const sidebar = (e.target as HTMLElement).closest(".flow-sidebar") as HTMLElement;
+    const currentY = sidebarY ?? sidebar.getBoundingClientRect().top;
+    dragStartRef.current = { mouseY: e.clientY, sidebarY: currentY };
+    setDragging(true);
+  };
+
+  const handleToggleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
+    wasDraggedRef.current = false;
+    const sidebar = (e.target as HTMLElement).closest(".flow-sidebar") as HTMLElement;
+    const currentY = sidebarY ?? sidebar.getBoundingClientRect().top;
+    dragStartRef.current = { mouseY: e.touches[0].clientY, sidebarY: currentY };
+    setDragging(true);
+  };
+
+  // 拖拽结束后才允许 click 展开
+  const handleToggleClick = () => {
+    if (wasDraggedRef.current) return;
+    setOpen(!open);
+  };
+
+  useEffect(() => {
+    if (!dragging) return;
+
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+      const dy = clientY - dragStartRef.current.mouseY;
+      if (Math.abs(dy) > 3) wasDraggedRef.current = true;
+      setSidebarY(dragStartRef.current.sidebarY + dy);
+    };
+
+    const handleUp = () => setDragging(false);
+
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+    window.addEventListener("touchmove", handleMove, { passive: false });
+    window.addEventListener("touchend", handleUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+      window.removeEventListener("touchmove", handleMove);
+      window.removeEventListener("touchend", handleUp);
+    };
+  }, [dragging]);
+
   return (
-    <div className="flow-sidebar">
-      <div className="flow-toggle" onClick={() => setOpen(!open)}>
+    <div
+      className="flow-sidebar"
+      style={sidebarY != null ? { top: `${sidebarY}px`, transform: "none" } : undefined}
+    >
+      <div
+        className="flow-toggle"
+        onClick={handleToggleClick}
+        onMouseDown={handleToggleMouseDown}
+        onTouchStart={handleToggleTouchStart}
+      >
         课堂流程
       </div>
       {open && (

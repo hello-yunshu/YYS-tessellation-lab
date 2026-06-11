@@ -35,7 +35,7 @@ export default function TilingCanvas() {
   }, []);
 
   const config = getShapeConfig(selectedShape);
-  const tileSize = screenSize === "wide" ? 34 : screenSize === "regular" ? 30 : 26;
+  const tileSize = screenSize === "wide" ? 13 : screenSize === "regular" ? 20 : 28;
   const tiles = useMemo(
     () => config.generateTiles(6, 4, tileSize),
     [selectedShape, tileSize]
