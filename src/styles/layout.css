@@ -99,6 +99,7 @@
   transform: translateY(-50%);
   z-index: 100;
   display: flex;
+  touch-action: none; /* 阻止触屏滚动穿透到页面 */
 }
 
 .flow-toggle {
